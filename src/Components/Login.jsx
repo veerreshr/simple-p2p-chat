@@ -7,7 +7,9 @@ import {
   signOut,
 } from "firebase/auth";
 import { ToastContainer, toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import Button from "@mui/material/Button";
+import GoogleIcon from "@mui/icons-material/Google";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 function Login() {
   const signin = useStoreActions((actions) => actions.auth.signin);
@@ -50,9 +52,21 @@ function Login() {
     <div>
       <ToastContainer />
       {isLoggedIn ? (
-        <button onClick={signOutHelper}>Logout!</button>
+        <Button
+          color="inherit"
+          onClick={signOutHelper}
+          endIcon={<LogoutIcon />}
+        >
+          Logout
+        </Button>
       ) : (
-        <button onClick={signInHelper}>Login!</button>
+        <Button
+          color="inherit"
+          onClick={signInHelper}
+          startIcon={<GoogleIcon size="small" />}
+        >
+          Login
+        </Button>
       )}
     </div>
   );

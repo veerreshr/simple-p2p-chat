@@ -36,13 +36,28 @@ function ListUsersComponent() {
       <AddUserToChats />
       {peopleList &&
         Object.keys(peopleList).map((person) => (
-          <UserListCard key={person} name={person} pending={true} />
+          <UserListCard key={person} name={person} />
         ))}
     </Paper>
   );
 }
 
-function UserListCard({ name, pending }) {
+function UserListCard({ name }) {
+  const db = getDatabase();
+  const [online, setOnline] = useState(false);
+  useEffect(() => {
+    if (name) {
+      const onlineRef = ref(db, "user-presence/" + name + "/connections");
+      onValue(onlineRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          setOnline(true);
+        } else {
+          setOnline(false);
+        }
+      });
+    }
+  }, [name]);
   const updateChatsUser = useStoreActions(
     (actions) => actions.chats.updateChatsUser
   );
@@ -70,7 +85,7 @@ function UserListCard({ name, pending }) {
         <Typography variant="body" component="div">
           {name.length > 15 ? name.substring(0, 15) + "..." : name}
         </Typography>
-        <Badge color="secondary" variant="dot" invisible={!pending}>
+        <Badge color="secondary" variant="dot" invisible={!online}>
           <MailIcon />
         </Badge>
       </Stack>

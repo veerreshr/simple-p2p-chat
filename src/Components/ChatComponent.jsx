@@ -189,7 +189,7 @@ function Message({ message, myUid }) {
             {Date(message.createdAt * 1000)
               .toString()
               .substring(4, 21)}
-            {/* <RenderStatus status={message.status} /> */}:
+            <RenderStatus status={message.status} />:
           </Typography>
           <Paper elevation={2} sx={{ padding: 1 }}>
             <Typography variant="body2">{message.message}</Typography>
@@ -221,4 +221,5 @@ function RenderStatus({ status }) {
   } else if (status == "seen") {
     return <DoneAllIcon fontSize="small" color="info" />;
   }
+  return <></>;
 }
