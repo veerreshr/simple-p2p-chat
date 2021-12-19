@@ -36,7 +36,7 @@ function ListUsersComponent() {
       <AddUserToChats />
       {peopleList &&
         Object.keys(peopleList).map((person) => (
-          <UserListCard name={person} pending={true} />
+          <UserListCard key={person} name={person} pending={true} />
         ))}
     </Paper>
   );

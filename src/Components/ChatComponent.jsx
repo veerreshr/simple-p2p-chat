@@ -111,11 +111,12 @@ export default function ChatComponent() {
           {myUid &&
             messageData &&
             Object.keys(messageData).map((msg) => (
-              <Message message={messageData[msg]} myUid={myUid} />
+              <Message
+                key={messageData[msg].by + messageData[msg].createdAt}
+                message={messageData[msg]}
+                myUid={myUid}
+              />
             ))}
-          {/* {messages.map((message) => (
-            <Message message={message} myUid={myUid} />
-          ))} */}
         </Box>
         <Box>
           <SendMessageComponent myUid={myUid} threadId={threadId} />

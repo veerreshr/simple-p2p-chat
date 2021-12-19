@@ -30,7 +30,7 @@ function Login() {
       .catch((error) => {
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("userInfo");
-        toast.error(errorMessage);
+        toast.error(error.message);
         // const credential = GoogleAuthProvider.credentialFromError(error);
       });
   };
