@@ -23,9 +23,17 @@ export default function NavBarComponent() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ cursor: "pointer" }}
+            onClick={() => {
+              navigate("/");
+            }}
+          >
             Simple P2P Chats
           </Typography>
+          <Box sx={{ flexGrow: 1 }}></Box>
           <Button
             onClick={() => {
               navigate("/chats");

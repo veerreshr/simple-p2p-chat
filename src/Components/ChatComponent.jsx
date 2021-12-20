@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
@@ -20,50 +20,76 @@ import {
   get,
   onValue,
   push,
-  set,
   query,
   serverTimestamp,
   limitToFirst,
+  update,
 } from "firebase/database";
 import { ToastContainer, toast } from "react-toastify";
 
 export default function ChatComponent() {
   const auth = getAuth();
   const myUid = auth.currentUser.uid;
-  const userName = useStoreState((state) => state.chats.user);
+  const recieverId = useStoreState((state) => state.chats.user);
 
+  const messagesEndRef = useRef(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
   const [messageData, setMessageData] = useState();
   const [threadId, setThreadId] = useState();
-  const getMessages = (myId, personId) => {
-    //this should give a thread Id and in turn should get all messages in that thread
+  const getMessages = () => {
+    const db = getDatabase();
+    const threadRef = ref(db, "threads/" + threadId);
+    // const limitToFirstDataRef = query(threadRef, limitToFirst(15));
+    onValue(threadRef, (threadDataSnapshot) => {
+      const threadData = threadDataSnapshot.val();
+      setMessageData(threadData);
+    });
+  };
+  const updateStatusToDelivered = () => {
+    const db = getDatabase();
+    const unreadMessagesRef = ref(db, `users/${myUid}/${recieverId}/unread`);
+    onValue(unreadMessagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && threadId) {
+        Object.keys(data).map((key) => {
+          //message is in sent state, we need to change it into delivered state
+          const updates = {};
+          updates[`threads/${threadId}/${key}/status`] = "seen";
+          updates[`users/${myUid}/${recieverId}/unread/${key}`] = null;
+          update(ref(db), updates);
+        });
+      }
+    });
+  };
+  const getThreadId = () => {
     const dbRef = ref(getDatabase());
-    let threadIdValue;
-    get(child(dbRef, `users/${myId}/${personId}/threadId`))
+    get(child(dbRef, `users/${myUid}/${recieverId}/threadId`))
       .then((snapshot) => {
         if (snapshot.exists()) {
-          threadIdValue = snapshot.val();
-          const db = getDatabase();
-          const threadRef = ref(db, "threads/" + threadIdValue);
-          const limitToFirstDataRef = query(threadRef, limitToFirst(15));
-          onValue(limitToFirstDataRef, (threadDataSnapshot) => {
-            const threadData = threadDataSnapshot.val();
-            setThreadId(threadIdValue);
-            setMessageData(threadData);
-          });
+          setThreadId(snapshot.val());
         } else {
-          toast.info("No data available");
+          toast.info("No thread Id available");
         }
       })
       .catch((error) => {
         toast.error(error.message);
       });
   };
+  useEffect(() => {
+    if (myUid && recieverId) {
+      getThreadId();
+      if (threadId) {
+        getMessages();
+        updateStatusToDelivered();
+      }
+    }
+  }, [recieverId, threadId, myUid]);
 
   useEffect(() => {
-    if (myUid && userName) {
-      getMessages(myUid, userName);
-    }
-  }, [userName]);
+    scrollToBottom();
+  }, [messageData]);
 
   return (
     <>
@@ -89,7 +115,7 @@ export default function ChatComponent() {
             spacing={2}
           >
             <Typography variant="h6" component="h6">
-              {userName}
+              {recieverId}
             </Typography>
             <IconButton
               color="primary"
@@ -107,26 +133,26 @@ export default function ChatComponent() {
             overflowY: "scroll",
           }}
         >
-          <Box sx={{ mt: "auto" }}></Box>
           {myUid &&
             messageData &&
             Object.keys(messageData).map((msg) => (
-              <Message
-                key={messageData[msg].by + messageData[msg].createdAt}
-                message={messageData[msg]}
-                myUid={myUid}
-              />
+              <Message key={msg} message={messageData[msg]} myUid={myUid} />
             ))}
+          <div ref={messagesEndRef} />
         </Box>
         <Box>
-          <SendMessageComponent myUid={myUid} threadId={threadId} />
+          <SendMessageComponent
+            senderId={myUid}
+            recieverId={recieverId}
+            threadId={threadId}
+          />
         </Box>
       </Paper>
     </>
   );
 }
 
-function SendMessageComponent({ myUid, threadId }) {
+function SendMessageComponent({ senderId, recieverId, threadId }) {
   const [value, setValue] = useState("");
   const handleChange = (event) => {
     setValue(event.target.value);
@@ -135,12 +161,19 @@ function SendMessageComponent({ myUid, threadId }) {
     if (value) {
       let messageObj = {
         message: value,
-        by: myUid,
+        by: senderId,
         createdAt: serverTimestamp(),
+        status: "sent",
       };
-      const messageListRef = ref(getDatabase(), `threads/${threadId}`);
-      const newMessageRef = push(messageListRef);
-      set(newMessageRef, messageObj);
+      const db = getDatabase();
+      const newMessageKey = push(child(ref(db), `threads/${threadId}`)).key;
+      const updates = {};
+      updates[`threads/${threadId}/${newMessageKey}`] = messageObj;
+      updates[
+        `users/${recieverId}/${senderId}/unread/${newMessageKey}`
+      ] = false;
+      setValue("");
+      return update(ref(db), updates);
     }
   };
   return (
@@ -185,14 +218,20 @@ function Message({ message, myUid }) {
       <Grid container sx={{ my: 1 }}>
         <Grid item xs={4} md={5}></Grid>
         <Grid item xs={8} md={7}>
-          <Typography variant="caption" component="div">
-            {Date(message.createdAt * 1000)
-              .toString()
-              .substring(4, 21)}
-            <RenderStatus status={message.status} />:
-          </Typography>
           <Paper elevation={2} sx={{ padding: 1 }}>
             <Typography variant="body2">{message.message}</Typography>
+            <Stack
+              flexDirection={"row"}
+              alignItems={"center"}
+              justifyContent={"flex-end"}
+            >
+              <Typography variant="caption" component="div" sx={{ px: 1 }}>
+                {Date(message.createdAt * 1000)
+                  .toString()
+                  .substring(4, 21)}
+              </Typography>
+              <RenderStatus status={message.status} />
+            </Stack>
           </Paper>
         </Grid>
       </Grid>
@@ -201,11 +240,19 @@ function Message({ message, myUid }) {
     return (
       <Grid container sx={{ my: 1 }}>
         <Grid item xs={8} md={7}>
-          <Typography variant="caption" component="div">
-            {message.timestamp}
-          </Typography>
           <Paper elevation={2} sx={{ padding: 1 }}>
             <Typography variant="body2">{message.message}</Typography>
+            <Stack
+              flexDirection={"row"}
+              alignItems={"center"}
+              justifyContent={"flex-end"}
+            >
+              <Typography variant="caption" component="div" sx={{ px: 1 }}>
+                {Date(message.createdAt * 1000)
+                  .toString()
+                  .substring(4, 21)}
+              </Typography>
+            </Stack>
           </Paper>
         </Grid>
       </Grid>
