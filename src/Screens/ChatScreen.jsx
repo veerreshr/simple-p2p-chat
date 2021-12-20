@@ -17,25 +17,27 @@ import {
 function ChatScreen() {
   const db = getDatabase();
   const auth = getAuth();
-  const myUid = auth.currentUser.uid;
   useEffect(() => {
-    const myConnectionsRef = ref(db, `user-presence/${myUid}/connections`);
+    const myUid = auth?.currentUser?.uid;
+    if (auth?.currentUser?.uid) {
+      const myConnectionsRef = ref(db, `user-presence/${myUid}/connections`);
 
-    const lastOnlineRef = ref(db, `user-presence/${myUid}/lastOnline`);
+      const lastOnlineRef = ref(db, `user-presence/${myUid}/lastOnline`);
 
-    const connectedRef = ref(db, ".info/connected");
-    onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        const con = push(myConnectionsRef);
+      const connectedRef = ref(db, ".info/connected");
+      onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+          const con = push(myConnectionsRef);
 
-        onDisconnect(con).remove();
+          onDisconnect(con).remove();
 
-        set(con, true);
+          set(con, true);
 
-        onDisconnect(lastOnlineRef).set(serverTimestamp());
-      }
-    });
-  }, []);
+          onDisconnect(lastOnlineRef).set(serverTimestamp());
+        }
+      });
+    }
+  }, [auth]);
   return (
     <Box
       sx={{
@@ -45,15 +47,16 @@ function ChatScreen() {
         },
       }}
     >
-      My Id : {myUid}
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
-          <ListUsersComponent />
+      {auth?.currentUser?.uid && (
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={3}>
+            <ListUsersComponent />
+          </Grid>
+          <Grid item xs={12} md={9}>
+            <ChatComponent />
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={9}>
-          <ChatComponent />
-        </Grid>
-      </Grid>
+      )}
     </Box>
   );
 }

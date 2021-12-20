@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Login from "./Login";
 import { useNavigate } from "react-router-dom";
+import CopyMyUidComponent from "./CopyMyUidComponent";
 
 export default function NavBarComponent() {
   let navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function NavBarComponent() {
             Simple P2P Chats
           </Typography>
           <Box sx={{ flexGrow: 1 }}></Box>
+          <CopyMyUidComponent />
           <Button
             onClick={() => {
               navigate("/chats");
