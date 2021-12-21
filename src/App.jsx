@@ -1,11 +1,10 @@
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./Screens/Home";
 import NotFound from "./Components/NotFound";
 import RequireAuth from "./RequireAuth";
 import LoginScreen from "./Screens/LoginScreen";
 import ChatScreen from "./Screens/ChatScreen";
 import NavBarComponent from "./Components/NavBarComponent";
-import { BrowserRouter } from "react-router-dom";
 
 function App() {
   return (

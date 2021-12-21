@@ -15,8 +15,10 @@ import {
 import { getAuth } from "firebase/auth";
 import AddUserToChats from "./AddUserToChats";
 import { useStoreActions } from "easy-peasy";
+import { styled } from "@mui/material/styles";
+import Avatar from "@mui/material/Avatar";
 
-function ListUsersComponent() {
+export default function ListUsersComponent() {
   const auth = getAuth();
   const db = getDatabase();
   const myUid = auth.currentUser.uid;
@@ -25,7 +27,7 @@ function ListUsersComponent() {
 
   useEffect(() => {
     if (myUid) {
-      const people = ref(db, "users/" + myUid);
+      const people = ref(db, "users/" + myUid + "/contacts");
       onValue(people, (snapshot) => {
         const data = snapshot.val();
         setPeopleList(data);
@@ -54,7 +56,7 @@ function UserListCard({ contactId, myUid }) {
   const [online, setOnline] = useState(false);
   const [unread, setUnread] = useState(0);
   const [threadId, setThreadId] = useState();
-
+  const [profileDetails, setProfileDetails] = useState();
   const updateOnlinePresence = () => {
     const onlineRef = ref(db, "user-presence/" + contactId + "/connections");
     onValue(onlineRef, (snapshot) => {
@@ -67,8 +69,23 @@ function UserListCard({ contactId, myUid }) {
     });
   };
 
+  const getProfileDetails = () => {
+    return onValue(
+      ref(db, `users/${contactId}/details`),
+      (snapshot) => {
+        setProfileDetails(snapshot.val());
+      },
+      {
+        onlyOnce: true,
+      }
+    );
+  };
+
   const getUnreadMessages = () => {
-    const unreadMessagesRef = ref(db, `users/${myUid}/${contactId}/unread`);
+    const unreadMessagesRef = ref(
+      db,
+      `users/${myUid}/contacts/${contactId}/unread`
+    );
     onValue(unreadMessagesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -78,7 +95,9 @@ function UserListCard({ contactId, myUid }) {
           if (!data[key]) {
             const updates = {};
             updates[`threads/${threadId}/${key}/status`] = "delivered";
-            updates[`users/${myUid}/${contactId}/unread/${key}`] = true;
+            updates[
+              `users/${myUid}/contacts/${contactId}/unread/${key}`
+            ] = true;
             update(ref(db), updates);
           }
         });
@@ -87,7 +106,7 @@ function UserListCard({ contactId, myUid }) {
   };
 
   const getThreadId = () => {
-    get(child(ref(db), `users/${myUid}/${contactId}/threadId`))
+    get(child(ref(db), `users/${myUid}/contacts/${contactId}/threadId`))
       .then((snapshot) => {
         if (snapshot.exists()) {
           setThreadId(snapshot.val());
@@ -107,15 +126,17 @@ function UserListCard({ contactId, myUid }) {
       }
       updateOnlinePresence();
       if (threadId) {
+        getProfileDetails();
         getUnreadMessages();
       }
     }
   }, [contactId, threadId]);
+
   const updateChatsUser = useStoreActions(
     (actions) => actions.chats.updateChatsUser
   );
   const chatWithUser = () => {
-    updateChatsUser(contactId);
+    updateChatsUser({ contactId, profileDetails });
   };
   return (
     <Paper
@@ -128,25 +149,70 @@ function UserListCard({ contactId, myUid }) {
           backgroundColor: "#e3e3e3",
           cursor: "pointer",
         },
-        bgcolor: online ? "success.light" : "none",
       }}
     >
-      <Stack
-        flexDirection={"row"}
-        justifyContent={"space-between"}
-        alignItems={"center"}
-      >
-        <Typography variant="body" component="div">
-          {contactId.length > 15
-            ? contactId.substring(0, 15) + "..."
-            : contactId}
-        </Typography>
-        <Badge color="secondary" badgeContent={unread}>
-          <MailIcon />
-        </Badge>
-      </Stack>
+      {profileDetails && (
+        <Stack
+          flexDirection={"row"}
+          justifyContent={"space-between"}
+          alignItems={"center"}
+        >
+          <Stack flexDirection={"row"} alignItems={"center"}>
+            <ChatProfile online={online} img={profileDetails?.photoURL} />
+            <Typography variant="body" component="div" sx={{ mx: 1 }}>
+              {profileDetails?.name.length > 15
+                ? profileDetails?.name.substring(0, 15) + "..."
+                : profileDetails?.name}
+            </Typography>
+          </Stack>
+
+          <Badge color="secondary" badgeContent={unread}>
+            <MailIcon />
+          </Badge>
+        </Stack>
+      )}
     </Paper>
   );
 }
 
-export default ListUsersComponent;
+const StyledBadge = styled(Badge)(({ theme }) => ({
+  "& .MuiBadge-badge": {
+    backgroundColor: "#44b700",
+    color: "#44b700",
+    boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+    "&::after": {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      borderRadius: "50%",
+      animation: "ripple 1.2s infinite ease-in-out",
+      border: "1px solid currentColor",
+      content: '""',
+    },
+  },
+  "@keyframes ripple": {
+    "0%": {
+      transform: "scale(.8)",
+      opacity: 1,
+    },
+    "100%": {
+      transform: "scale(2.4)",
+      opacity: 0,
+    },
+  },
+}));
+
+const ChatProfile = ({ online, img }) => {
+  return (
+    <StyledBadge
+      overlap="circular"
+      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      variant="dot"
+      invisible={!online}
+    >
+      <Avatar alt={"Chat Profile Image" + img} src={img} />
+    </StyledBadge>
+  );
+};

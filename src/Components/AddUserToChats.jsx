@@ -19,10 +19,10 @@ function AddUserToChats() {
     const uid2 = value;
     if (value) {
       const db = getDatabase();
-      set(ref(db, `users/${myUid}/${uid2}`), {
+      set(ref(db, `users/${myUid}/contacts/${uid2}`), {
         threadId: `${myUid}${uid2}`,
       });
-      set(ref(db, `users/${uid2}/${myUid}`), {
+      set(ref(db, `users/${uid2}/contacts/${myUid}`), {
         threadId: `${myUid}${uid2}`,
       });
     }

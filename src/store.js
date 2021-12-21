@@ -14,9 +14,11 @@ const store = createStore({
     }),
   },
   chats: {
-    user: "",
+    userId: "",
+    userDetails: "",
     updateChatsUser: action((state, payload) => {
-      state.user = payload;
+      state.userId = payload.contactId;
+      state.userDetails = payload.profileDetails;
     }),
   },
 });

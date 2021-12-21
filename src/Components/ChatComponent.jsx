@@ -26,11 +26,13 @@ import {
   update,
 } from "firebase/database";
 import { ToastContainer, toast } from "react-toastify";
+import Avatar from "@mui/material/Avatar";
 
 export default function ChatComponent() {
   const auth = getAuth();
   const myUid = auth.currentUser.uid;
-  const recieverId = useStoreState((state) => state.chats.user);
+  const recieverId = useStoreState((state) => state.chats.userId);
+  const recieverDetails = useStoreState((state) => state.chats.userDetails);
 
   const messagesEndRef = useRef(null);
   const scrollToBottom = () => {
@@ -49,7 +51,10 @@ export default function ChatComponent() {
   };
   const updateStatusToDelivered = () => {
     const db = getDatabase();
-    const unreadMessagesRef = ref(db, `users/${myUid}/${recieverId}/unread`);
+    const unreadMessagesRef = ref(
+      db,
+      `users/${myUid}/contacts/${recieverId}/unread`
+    );
     onValue(unreadMessagesRef, (snapshot) => {
       const data = snapshot.val();
       if (data && threadId) {
@@ -57,7 +62,7 @@ export default function ChatComponent() {
           //message is in sent state, we need to change it into delivered state
           const updates = {};
           updates[`threads/${threadId}/${key}/status`] = "seen";
-          updates[`users/${myUid}/${recieverId}/unread/${key}`] = null;
+          updates[`users/${myUid}/contacts/${recieverId}/unread/${key}`] = null;
           update(ref(db), updates);
         });
       }
@@ -65,7 +70,7 @@ export default function ChatComponent() {
   };
   const getThreadId = () => {
     const dbRef = ref(getDatabase());
-    get(child(dbRef, `users/${myUid}/${recieverId}/threadId`))
+    get(child(dbRef, `users/${myUid}/contacts/${recieverId}/threadId`))
       .then((snapshot) => {
         if (snapshot.exists()) {
           setThreadId(snapshot.val());
@@ -114,9 +119,21 @@ export default function ChatComponent() {
             alignItems="center"
             spacing={2}
           >
-            <Typography variant="h6" component="h6">
-              {recieverId}
-            </Typography>
+            <Stack
+              direction="row"
+              justifyContent="space-around"
+              alignItems="center"
+              spacing={2}
+            >
+              <Avatar
+                alt={"Chat Profile Image" + recieverDetails?.photoURL}
+                src={recieverDetails?.photoURL}
+              />
+              <Typography variant="h6" component="h6">
+                {recieverDetails?.name}
+              </Typography>
+            </Stack>
+
             <IconButton
               color="primary"
               aria-label="upload picture"
@@ -170,7 +187,7 @@ function SendMessageComponent({ senderId, recieverId, threadId }) {
       const updates = {};
       updates[`threads/${threadId}/${newMessageKey}`] = messageObj;
       updates[
-        `users/${recieverId}/${senderId}/unread/${newMessageKey}`
+        `users/${recieverId}/contacts/${senderId}/unread/${newMessageKey}`
       ] = false;
       setValue("");
       return update(ref(db), updates);

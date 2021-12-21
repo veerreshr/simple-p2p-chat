@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
-import { getAuth } from "firebase/auth";
+import { useStoreState } from "easy-peasy";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 function CopyMyUidComponent() {
-  const auth = getAuth();
-  const [open, setOpen] = useState(false);
   const [id, setId] = useState();
+  const [open, setOpen] = useState(false);
+  const isLoggedIn = useStoreState((state) => state.auth.isLoggedIn);
+  const uid = useStoreState((state) => state.auth.userInfo.uid);
 
   const handleTooltipClose = () => {
     setOpen(false);
@@ -23,11 +24,12 @@ function CopyMyUidComponent() {
   };
 
   useEffect(() => {
-    const myUid = auth?.currentUser?.uid;
-    if (myUid) {
-      setId(myUid);
-    } else setId(null);
-  }, [auth]);
+    if (isLoggedIn) {
+      setId(uid);
+    } else {
+      setId(null);
+    }
+  }, [isLoggedIn]);
   return (
     <div>
       {id && (
@@ -50,6 +52,7 @@ function CopyMyUidComponent() {
                 sx={{ mx: 1 }}
                 onClick={handleCopy}
                 variant="outlined"
+                endIcon={<ContentCopyIcon />}
               >
                 Click to Copy Id
               </Button>
