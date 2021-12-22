@@ -17,7 +17,7 @@ import { useStoreActions } from "easy-peasy";
 import { styled } from "@mui/material/styles";
 import Avatar from "@mui/material/Avatar";
 
-export default function ListUsersComponent() {
+export default function ListOnlineUsersComponent() {
   const auth = getAuth();
   const db = getDatabase();
   const myUid = auth.currentUser.uid;
@@ -93,8 +93,6 @@ function UserListCard({ contactId, myUid }) {
             update(ref(db), updates);
           }
         });
-      } else {
-        setUnread(0);
       }
     });
   };
@@ -134,7 +132,7 @@ function UserListCard({ contactId, myUid }) {
   };
   return (
     <>
-      {profileDetails && (
+      {profileDetails && online && (
         <Paper
           onClick={chatWithUser}
           elevation={2}

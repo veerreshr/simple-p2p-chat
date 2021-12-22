@@ -9,7 +9,7 @@ This chat application demonstrates a simple solution for the most basic chat req
 
 **Client:** React Js (Vite), easy-peasy ( for state management ), Material UI
 
-**Server:** Firebase Realtime Database and Hosting
+**Server:** Firebase Realtime Database and Firebase Hosting
 
   
 ## Screenshots
@@ -60,8 +60,12 @@ Start the server
 ## Roadmap
 
 - Strong Data Integrity Rules - Firebase Rules
+  
+- Better Optimization of Firebase calls ( currently there are few redundant calls )
 
 - Cleaning the code
+  
+- Testing the code
 
 
 

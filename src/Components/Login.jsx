@@ -81,7 +81,7 @@ function Login() {
         <MenuItem
           color="inherit"
           onClick={signOutHelper}
-          endIcon={<LogoutIcon />}
+          // endIcon={<LogoutIcon />}
         >
           Logout
         </MenuItem>
@@ -89,7 +89,7 @@ function Login() {
         <MenuItem
           color="inherit"
           onClick={signInHelper}
-          startIcon={<GoogleIcon size="small" />}
+          // startIcon={<GoogleIcon size="small" />}
         >
           Login
         </MenuItem>
