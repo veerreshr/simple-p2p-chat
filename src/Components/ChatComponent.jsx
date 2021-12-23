@@ -372,7 +372,7 @@ function SendMessageComponent({ senderId, recieverId, threadId }) {
       },
     };
     await Axios.post(
-      "http://simple-p2p-chat-server.herokuapp.com/firebase/notification",
+      "https://simple-p2p-chat-server.herokuapp.com/firebase/notification",
       {
         registrationToken: registrationToken,
         message: {
