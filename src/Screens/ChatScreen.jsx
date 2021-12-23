@@ -20,14 +20,15 @@ function ChatScreen() {
   const db = getDatabase();
   const auth = getAuth();
   useEffect(() => {
+    let unsubscribe;
     const myUid = auth?.currentUser?.uid;
-    if (auth?.currentUser?.uid) {
+    if (myUid) {
       const myConnectionsRef = ref(db, `user-presence/${myUid}/connections`);
 
       const lastOnlineRef = ref(db, `user-presence/${myUid}/lastOnline`);
 
       const connectedRef = ref(db, ".info/connected");
-      onValue(connectedRef, (snap) => {
+      unsubscribe = onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
           const con = push(myConnectionsRef);
 
@@ -39,6 +40,11 @@ function ChatScreen() {
         }
       });
     }
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [auth]);
   return (
     <Box

@@ -27,6 +27,7 @@ import {
 } from "firebase/database";
 import { ToastContainer, toast } from "react-toastify";
 import Avatar from "@mui/material/Avatar";
+import Axios from "axios";
 
 export default function ChatComponent() {
   const auth = getAuth();
@@ -34,40 +35,8 @@ export default function ChatComponent() {
   const recieverId = useStoreState((state) => state.chats.userId);
   const recieverDetails = useStoreState((state) => state.chats.userDetails);
 
-  const messagesEndRef = useRef(null);
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-  const [messageData, setMessageData] = useState();
   const [threadId, setThreadId] = useState();
-  const getMessages = () => {
-    const db = getDatabase();
-    const threadRef = ref(db, "threads/" + threadId);
-    // const limitToFirstDataRef = query(threadRef, limitToLast(40)); this works but not using currently because did not find any use case
-    onValue(threadRef, (threadDataSnapshot) => {
-      const threadData = threadDataSnapshot.val();
-      setMessageData(threadData);
-    });
-  };
-  const updateStatusToDelivered = () => {
-    const db = getDatabase();
-    const unreadMessagesRef = ref(
-      db,
-      `users/${myUid}/contacts/${recieverId}/unread`
-    );
-    onValue(unreadMessagesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && threadId) {
-        Object.keys(data).map((key) => {
-          //message is in sent state, we need to change it into delivered state
-          const updates = {};
-          updates[`threads/${threadId}/${key}/status`] = "seen";
-          updates[`users/${myUid}/contacts/${recieverId}/unread/${key}`] = null;
-          update(ref(db), updates);
-        });
-      }
-    });
-  };
+
   const getThreadId = () => {
     const dbRef = ref(getDatabase());
     get(child(dbRef, `users/${myUid}/contacts/${recieverId}/threadId`))
@@ -82,19 +51,12 @@ export default function ChatComponent() {
         toast.error(error.message);
       });
   };
+
   useEffect(() => {
     if (myUid && recieverId) {
       getThreadId();
-      if (threadId) {
-        getMessages();
-        updateStatusToDelivered();
-      }
     }
   }, [recieverId, threadId, myUid]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messageData]);
 
   return (
     <>
@@ -107,66 +69,13 @@ export default function ChatComponent() {
           flexDirection: "column",
         }}
       >
-        {recieverId ? (
-          <>
-            <Paper
-              elevation={3}
-              sx={{
-                padding: 2,
-              }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                spacing={2}
-              >
-                <Stack
-                  direction="row"
-                  justifyContent="space-around"
-                  alignItems="center"
-                  spacing={2}
-                >
-                  <Avatar
-                    alt={"Chat Profile Image" + recieverDetails?.photoURL}
-                    src={recieverDetails?.photoURL}
-                  />
-                  <Typography variant="h6" component="h6">
-                    {recieverDetails?.name}
-                  </Typography>
-                </Stack>
-
-                <IconButton
-                  color="primary"
-                  aria-label="upload picture"
-                  component="span"
-                >
-                  <ArrowDropDownIcon />
-                </IconButton>
-              </Stack>
-            </Paper>
-            <Box
-              sx={{
-                padding: 2,
-                flexGrow: "1",
-                overflowY: "scroll",
-              }}
-            >
-              {myUid &&
-                messageData &&
-                Object.keys(messageData).map((msg) => (
-                  <Message key={msg} message={messageData[msg]} myUid={myUid} />
-                ))}
-              <div ref={messagesEndRef} />
-            </Box>
-            <Box>
-              <SendMessageComponent
-                senderId={myUid}
-                recieverId={recieverId}
-                threadId={threadId}
-              />
-            </Box>
-          </>
+        {myUid && recieverId && threadId ? (
+          <Chat
+            recieverId={recieverId}
+            recieverDetails={recieverDetails}
+            threadId={threadId}
+            myUid={myUid}
+          />
         ) : (
           <Box
             sx={{
@@ -335,12 +244,178 @@ export default function ChatComponent() {
   );
 }
 
+function Chat({ recieverId, recieverDetails, threadId, myUid }) {
+  const messagesEndRef = useRef(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const [messageData, setMessageData] = useState();
+
+  const getMessages = () => {
+    const db = getDatabase();
+    const threadRef = ref(db, "threads/" + threadId);
+    // const limitToFirstDataRef = query(threadRef, limitToLast(40)); this works but not using currently because did not find any use case
+    return onValue(threadRef, (threadDataSnapshot) => {
+      const threadData = threadDataSnapshot.val();
+      setMessageData(threadData);
+      scrollToBottom();
+    });
+  };
+  const updateStatusToDelivered = () => {
+    const db = getDatabase();
+    const unreadMessagesRef = ref(db, `users/${myUid}/contacts/${recieverId}`);
+    return onValue(unreadMessagesRef, (snapshot) => {
+      const data = snapshot.val();
+      const threadIdValue = data["threadId"];
+      const unReadData = data["unread"];
+      if (unReadData && threadIdValue) {
+        console.log(unReadData);
+        Object.keys(unReadData).map((key) => {
+          const updates = {};
+          updates[`threads/${threadIdValue}/${key}/status`] = "seen";
+          updates[`users/${myUid}/contacts/${recieverId}/unread/${key}`] = null;
+          update(ref(db), updates);
+        });
+      }
+    });
+  };
+
+  useEffect(() => {
+    let unsubscribeUpdateStatusRef;
+    let unsubscribeThreadRef;
+    unsubscribeThreadRef = getMessages();
+    unsubscribeUpdateStatusRef = updateStatusToDelivered();
+    return () => {
+      if (unsubscribeUpdateStatusRef) {
+        unsubscribeUpdateStatusRef();
+      }
+      if (unsubscribeThreadRef) {
+        unsubscribeThreadRef();
+      }
+    };
+  }, [recieverId, threadId, myUid]);
+
+  return (
+    <>
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 2,
+        }}
+      >
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={2}
+        >
+          <Stack
+            direction="row"
+            justifyContent="space-around"
+            alignItems="center"
+            spacing={2}
+          >
+            <Avatar
+              alt={"Chat Profile Image" + recieverDetails?.photoURL}
+              src={recieverDetails?.photoURL}
+            />
+            <Typography variant="h6" component="h6">
+              {recieverDetails?.name}
+            </Typography>
+          </Stack>
+
+          <IconButton
+            color="primary"
+            aria-label="upload picture"
+            component="span"
+          >
+            <ArrowDropDownIcon />
+          </IconButton>
+        </Stack>
+      </Paper>
+      <Box
+        sx={{
+          padding: 2,
+          flexGrow: "1",
+          overflowY: "scroll",
+        }}
+      >
+        {myUid &&
+          messageData &&
+          Object.keys(messageData).map((msg) => (
+            <Message key={msg} message={messageData[msg]} myUid={myUid} />
+          ))}
+        <div ref={messagesEndRef} />
+      </Box>
+      <Box>
+        <SendMessageComponent
+          senderId={myUid}
+          recieverId={recieverId}
+          threadId={threadId}
+        />
+      </Box>
+    </>
+  );
+}
+
 function SendMessageComponent({ senderId, recieverId, threadId }) {
   const [value, setValue] = useState("");
   const handleChange = (event) => {
     setValue(event.target.value);
   };
-  const sendMessage = () => {
+
+  const sendNotification = async (registrationToken, sender, message) => {
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    await Axios.post(
+      "http://simple-p2p-chat-server.herokuapp.com/firebase/notification",
+      {
+        registrationToken: registrationToken,
+        message: {
+          notification: {
+            title: sender,
+            body: message,
+          },
+        },
+      },
+      config
+    );
+  };
+
+  const getToken = async (id) => {
+    const db = getDatabase();
+    get(child(ref(db), `users/${id}/fcm_token`))
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          return snapshot.val();
+        } else {
+          console.error("No data available");
+        }
+      })
+      .catch((error) => {
+        console.error(error.message);
+      });
+  };
+
+  const getSenderName = async (id) => {
+    const db = getDatabase();
+    get(child(ref(db), `users/${id}/details/name`))
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          return snapshot.val();
+        } else {
+          console.error("No data available");
+        }
+      })
+      .catch((error) => {
+        console.error(error.message);
+      });
+  };
+  const sendMessage = async () => {
     if (value) {
       let messageObj = {
         message: value,
@@ -349,6 +424,8 @@ function SendMessageComponent({ senderId, recieverId, threadId }) {
         status: "sent",
       };
       const db = getDatabase();
+      const registrationToken = await getToken(recieverId);
+      const senderName = await getSenderName(senderId);
       const newMessageKey = push(child(ref(db), `threads/${threadId}`)).key;
       const updates = {};
       updates[`threads/${threadId}/${newMessageKey}`] = messageObj;
@@ -356,7 +433,9 @@ function SendMessageComponent({ senderId, recieverId, threadId }) {
         `users/${recieverId}/contacts/${senderId}/unread/${newMessageKey}`
       ] = false;
       setValue("");
-      return update(ref(db), updates);
+      const disconnection = await update(ref(db), updates);
+      sendNotification(registrationToken, senderName, value);
+      return disconnection;
     }
   };
   return (

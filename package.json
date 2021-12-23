@@ -11,6 +11,7 @@
     "@emotion/styled": "^11.6.0",
     "@mui/icons-material": "^5.2.4",
     "@mui/material": "^5.2.4",
+    "axios": "^0.24.0",
     "easy-peasy": "^5.0.4",
     "firebase": "^9.6.1",
     "history": "^5.2.0",
