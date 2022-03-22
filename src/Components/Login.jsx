@@ -12,7 +12,9 @@ import MenuItem from "@mui/material/MenuItem";
 import { getMessaging, getToken } from "firebase/messaging";
 import { firebaseConfig } from "./../firebaseConfig";
 import { initializeApp } from "firebase/app";
-function Login() {
+import { useNavigate } from "react-router-dom";
+
+function Login({ signInMessage = "Sign In", signOutMessage = "Sign Out" }) {
   const signin = useStoreActions((actions) => actions.auth.signin);
   const signout = useStoreActions((actions) => actions.auth.signout);
   const isLoggedIn = useStoreState((state) => state.auth.isLoggedIn);
@@ -39,6 +41,8 @@ function Login() {
       console.log("Unable to get permission to notify.");
     }
   };
+
+  const navigate = useNavigate();
 
   const setMessagingToken = (uid) => {
     const messaging = getMessaging();
@@ -79,12 +83,12 @@ function Login() {
           email: user.email,
           photoURL: user.photoURL,
         });
+        navigate("/", { replace: true });
       })
       .catch((error) => {
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("userInfo");
         toast.error(error.message);
-        // const credential = GoogleAuthProvider.credentialFromError(error);
       });
   };
 
@@ -94,7 +98,6 @@ function Login() {
         localStorage.setItem("isLoggedIn", JSON.stringify(false));
         localStorage.removeItem("userInfo");
         signout();
-        toast.success("Logged out");
       })
       .catch((error) => {
         const errorMessage = error.message;
@@ -109,20 +112,12 @@ function Login() {
     <>
       <ToastContainer />
       {showLogin ? (
-        <MenuItem
-          color="inherit"
-          onClick={signOutHelper}
-          // endIcon={<LogoutIcon />}
-        >
-          Logout
+        <MenuItem color="inherit" onClick={signOutHelper}>
+          {signOutMessage}
         </MenuItem>
       ) : (
-        <MenuItem
-          color="inherit"
-          onClick={signInHelper}
-          // startIcon={<GoogleIcon size="small" />}
-        >
-          Login
+        <MenuItem color="inherit" onClick={signInHelper}>
+          {signInMessage}
         </MenuItem>
       )}
     </>

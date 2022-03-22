@@ -32,7 +32,12 @@ export default function NavBarComponent() {
 
   const handleChats = () => {
     handleClose();
-    navigate("/chats");
+    navigate("/");
+  };
+
+  const handleAbout = () => {
+    handleClose();
+    navigate("/landing");
   };
 
   useEffect(() => {
@@ -62,7 +67,7 @@ export default function NavBarComponent() {
               navigate("/");
             }}
           >
-            Simple P2P Chats
+            P2P Chat
           </Typography>
           <Box sx={{ flexGrow: 1 }}></Box>
           {showLogin ? (
@@ -94,6 +99,7 @@ export default function NavBarComponent() {
                 </Box>
                 <Divider sx={{ mt: 2, mb: 1 }} />
                 <MenuItem onClick={handleChats}>Chats</MenuItem>
+                <MenuItem onClick={handleAbout}>About</MenuItem>
                 <Login />
               </Menu>
             </div>

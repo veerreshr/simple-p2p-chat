@@ -5,6 +5,7 @@ import RequireAuth from "./RequireAuth";
 import LoginScreen from "./Screens/LoginScreen";
 import ChatScreen from "./Screens/ChatScreen";
 import NavBarComponent from "./Components/NavBarComponent";
+import Landing from "./Screens/Landing";
 
 function App() {
   return (
@@ -12,10 +13,10 @@ function App() {
       <BrowserRouter>
         <NavBarComponent />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route element={<RequireAuth />}>
-            <Route path="/chats" element={<ChatScreen />} />
+            <Route path="/" element={<ChatScreen />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
