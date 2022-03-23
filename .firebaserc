@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "p2p-chat-app"
+    "default": "simple-p2p-chat"
   }
 }

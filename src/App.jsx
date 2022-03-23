@@ -6,6 +6,7 @@ import LoginScreen from "./Screens/LoginScreen";
 import ChatScreen from "./Screens/ChatScreen";
 import NavBarComponent from "./Components/NavBarComponent";
 import Landing from "./Screens/Landing";
+import HowItWorks from "./Screens/HowItWorks";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<LoginScreen />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
           <Route element={<RequireAuth />}>
             <Route path="/" element={<ChatScreen />} />
           </Route>

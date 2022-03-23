@@ -14,6 +14,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
+import InfoIcon from "@mui/icons-material/Info";
+import ChatIcon from "@mui/icons-material/Chat";
 
 export default function NavBarComponent() {
   let navigate = useNavigate();
@@ -40,6 +42,23 @@ export default function NavBarComponent() {
     navigate("/landing");
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: "P2P Chat",
+      text: `Found this cool app, come lets chat together!\n\n Use this User Id : ${userInfo.uid} to add me as a friend.`,
+      url: "https://simple-p2p-chat.web.app/",
+    };
+    try {
+      await navigator.share(shareData);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleHowItWorks = () => {
+    navigate("/how-it-works");
+  };
+
   useEffect(() => {
     setShowLogin(isLoggedIn);
     return () => {
@@ -56,8 +75,11 @@ export default function NavBarComponent() {
             color="inherit"
             aria-label="menu"
             sx={{ mr: 2 }}
+            onClick={() => {
+              navigate("/");
+            }}
           >
-            <MenuIcon />
+            <ChatIcon />
           </IconButton>
           <Typography
             variant="h6"
@@ -70,6 +92,15 @@ export default function NavBarComponent() {
             P2P Chat
           </Typography>
           <Box sx={{ flexGrow: 1 }}></Box>
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{ color: "white", borderColor: "white" }}
+            startIcon={<InfoIcon />}
+            onClick={handleHowItWorks}
+          >
+            How it works
+          </Button>
           {showLogin ? (
             <div>
               <IconButton
@@ -100,6 +131,7 @@ export default function NavBarComponent() {
                 <Divider sx={{ mt: 2, mb: 1 }} />
                 <MenuItem onClick={handleChats}>Chats</MenuItem>
                 <MenuItem onClick={handleAbout}>About</MenuItem>
+                <MenuItem onClick={handleShare}>Share</MenuItem>
                 <Login />
               </Menu>
             </div>
